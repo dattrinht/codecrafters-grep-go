@@ -45,14 +45,41 @@ func matchLine(line []byte, pattern string) (bool, error) {
 	var ok bool
 
 	if pattern == "\\d" {
-		ok = bytes.ContainsAny(line, "0123456789")
+		ok = matchDigits(line)
 	} else if pattern == "\\w" {
-		ok = bytes.ContainsAny(line, "abcdefghijklmnopqrstvuwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
-	} else if len(line) > 0 && line[0] == '[' && line[len(line)-1] == ']' {
-		ok = bytes.ContainsAny(line, pattern[1:len(pattern)-1])
+		ok = matchAlphanumeric(line)
+	} else if isPositiveCharGroups(pattern) {
+		ok = matchLiteralChar(line, pattern[1:len(pattern)-1])
+	} else if isNegativeCharGroups(pattern) {
+		ok = matchLiteralChar(line, pattern[2:len(pattern)-1])
 	} else {
-		ok = bytes.ContainsAny(line, pattern)
+		ok = matchLiteralChar(line, pattern)
 	}
 
 	return ok, nil
+}
+
+func matchLiteralChar(line []byte, pattern string) bool {
+	return bytes.ContainsAny(line, pattern)
+}
+
+func matchDigits(line []byte) bool {
+	return bytes.ContainsAny(line, "0123456789")
+}
+
+func matchAlphanumeric(line []byte) bool {
+	return bytes.ContainsAny(line, "abcdefghijklmnopqrstvuwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
+}
+
+func isPositiveCharGroups(pattern string) bool {
+	return len(pattern) >= 3 &&
+		pattern[0] == '[' &&
+		pattern[len(pattern)-1] == ']'
+}
+
+func isNegativeCharGroups(pattern string) bool {
+	return len(pattern) >= 4 &&
+		pattern[0] == '[' &&
+		pattern[1] == '^' &&
+		pattern[len(pattern)-1] == ']'
 }
