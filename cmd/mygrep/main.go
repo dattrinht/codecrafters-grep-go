@@ -35,18 +35,20 @@ func main() {
 	if !ok {
 		os.Exit(1)
 	}
-
-	// default exit code is 0 which means success
 }
 
 func matchLine(line []byte, pattern string) (bool, error) {
-	if utf8.RuneCountInString(pattern) != 1 {
+	if utf8.RuneCountInString(pattern) == 0 {
 		return false, fmt.Errorf("unsupported pattern: %q", pattern)
 	}
 
 	var ok bool
 
-	ok = bytes.ContainsAny(line, pattern)
+	if pattern == "\\d" {
+		ok = bytes.ContainsAny(line, "0123456789")
+	} else {
+		ok = bytes.ContainsAny(line, pattern)
+	}
 
 	return ok, nil
 }
