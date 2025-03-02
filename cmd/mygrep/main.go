@@ -1,15 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
+	"strings"
+	"unicode"
 	"unicode/utf8"
 )
-
-// Ensures gofmt doesn't remove the "bytes" import above (feel free to remove this!)
-var _ = bytes.ContainsAny
 
 // Usage: echo <input_text> | your_program.sh -E <pattern>
 func main() {
@@ -26,7 +24,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	ok, err := matchLine(line, pattern)
+	ok, err := matchLine(string(line), pattern)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(2)
@@ -37,50 +35,68 @@ func main() {
 	}
 }
 
-func matchLine(line []byte, pattern string) (bool, error) {
+func matchLine(line string, pattern string) (bool, error) {
 	if utf8.RuneCountInString(pattern) == 0 {
 		return false, fmt.Errorf("unsupported pattern: %q", pattern)
 	}
 
-	var ok bool
-
-	if pattern == "\\d" {
-		ok = matchDigits(line)
-	} else if pattern == "\\w" {
-		ok = matchAlphanumeric(line)
-	} else if isPositiveCharGroups(pattern) {
-		ok = matchLiteralChar(line, pattern[1:len(pattern)-1])
-	} else if isNegativeCharGroups(pattern) {
-		ok = !matchLiteralChar(line, pattern[2:len(pattern)-1])
-	} else {
-		ok = matchLiteralChar(line, pattern)
+	for pos := range len(line) {
+		if matchPattern(string(line), pattern, pos) {
+			fmt.Println("Matched!")
+			return true, nil
+		}
 	}
 
-	return ok, nil
+	fmt.Println("Not Matched!")
+	return false, nil
 }
 
-func matchLiteralChar(line []byte, pattern string) bool {
-	return bytes.ContainsAny(line, pattern)
+func matchPattern(line string, pattern string, pos int) bool {
+	n := len(pattern)
+	lI := pos
+	for pI := 0; pI < n; pI++ {
+		if lI >= len(line) {
+			return false
+		}
+		if pattern[pI] == '\\' && pI+1 < n {
+			if pattern[pI+1] == 'd' && !isDigit(rune(line[lI])) {
+				return false
+			} else if pattern[pI+1] == 'w' && !isAlphanumeric(rune(line[lI])) {
+				return false
+			} else {
+				pI++
+			}
+		} else if pattern[pI] == '[' && pI+1 < n {
+			cp := strings.Index(pattern[pI:], "]") + pI
+			if cp == pI-1 {
+				return false
+			}
+			if pattern[pI+1] == '^' {
+				if isMatchAnyPattern(pattern[pI+2:cp], string(line[lI])) {
+					return false
+				}
+			} else {
+				if !isMatchAnyPattern(pattern[pI+1:cp], string(line[lI])) {
+					return false
+				}
+			}
+			pI = cp
+		} else if pattern[pI] != line[lI] {
+			return false
+		}
+		lI++
+	}
+	return true
 }
 
-func matchDigits(line []byte) bool {
-	return bytes.ContainsAny(line, "0123456789")
+func isDigit(r rune) bool {
+	return unicode.IsDigit(r)
 }
 
-func matchAlphanumeric(line []byte) bool {
-	return bytes.ContainsAny(line, "abcdefghijklmnopqrstvuwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
+func isAlphanumeric(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
 }
 
-func isPositiveCharGroups(pattern string) bool {
-	return len(pattern) >= 3 &&
-		pattern[0] == '[' &&
-		pattern[1] != '^' &&
-		pattern[len(pattern)-1] == ']'
-}
-
-func isNegativeCharGroups(pattern string) bool {
-	return len(pattern) >= 4 &&
-		pattern[0] == '[' &&
-		pattern[1] == '^' &&
-		pattern[len(pattern)-1] == ']'
+func isMatchAnyPattern(pattern string, text string) bool {
+	return strings.Contains(pattern, text)
 }
