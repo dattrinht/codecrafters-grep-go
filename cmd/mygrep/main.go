@@ -51,7 +51,7 @@ func matchLine(line []byte, pattern string) (bool, error) {
 	} else if isPositiveCharGroups(pattern) {
 		ok = matchLiteralChar(line, pattern[1:len(pattern)-1])
 	} else if isNegativeCharGroups(pattern) {
-		ok = matchLiteralChar(line, pattern[2:len(pattern)-1])
+		ok = !matchLiteralChar(line, pattern[2:len(pattern)-1])
 	} else {
 		ok = matchLiteralChar(line, pattern)
 	}
@@ -74,6 +74,7 @@ func matchAlphanumeric(line []byte) bool {
 func isPositiveCharGroups(pattern string) bool {
 	return len(pattern) >= 3 &&
 		pattern[0] == '[' &&
+		pattern[1] != '^' &&
 		pattern[len(pattern)-1] == ']'
 }
 
