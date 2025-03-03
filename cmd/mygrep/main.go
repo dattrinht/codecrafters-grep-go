@@ -42,12 +42,14 @@ func matchLine(line string, pattern string) (bool, error) {
 
 	if pattern[0] == '^' {
 		return matchPattern(line, pattern[1:], 0), nil
-	} else {
-		for pos := range len(line) {
-			if matchPattern(string(line), pattern, pos) {
-				fmt.Println("Matched!")
-				return true, nil
-			}
+	} else if pattern[len(pattern)-1] == '$' {
+		return matchPattern(line, pattern[:len(pattern)-1], len(line)-len(pattern)+1), nil
+	}
+
+	for pos := range len(line) {
+		if matchPattern(string(line), pattern, pos) {
+			fmt.Println("Matched!")
+			return true, nil
 		}
 	}
 
