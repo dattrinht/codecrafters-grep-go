@@ -58,7 +58,7 @@ func matchLine(line string, pattern string) (bool, error) {
 }
 
 func matchPattern(line string, pattern string, pos int) bool {
-	n := len(pattern)
+	n, m := len(pattern), len(line)
 	lI := pos
 	for pI := 0; pI < n; pI++ {
 		if lI >= len(line) {
@@ -87,6 +87,14 @@ func matchPattern(line string, pattern string, pos int) bool {
 				}
 			}
 			pI = cp
+		} else if pattern[pI] == '+' {
+			if pI == 0 {
+				return false
+			}
+			for lI < m && pattern[pI-1] == line[lI] {
+				lI++
+			}
+			lI--
 		} else if pattern[pI] != line[lI] {
 			return false
 		}
