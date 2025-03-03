@@ -40,10 +40,14 @@ func matchLine(line string, pattern string) (bool, error) {
 		return false, fmt.Errorf("unsupported pattern: %q", pattern)
 	}
 
-	for pos := range len(line) {
-		if matchPattern(string(line), pattern, pos) {
-			fmt.Println("Matched!")
-			return true, nil
+	if pattern[0] == '^' {
+		return matchPattern(line, pattern[1:], 0), nil
+	} else {
+		for pos := range len(line) {
+			if matchPattern(string(line), pattern, pos) {
+				fmt.Println("Matched!")
+				return true, nil
+			}
 		}
 	}
 
