@@ -95,13 +95,24 @@ func matchPattern(line string, pattern string, pos int) bool {
 			if pI == 0 {
 				return false
 			}
-			for lI < m && pattern[pI-1] == line[lI] {
-				lI++
+			if pattern[pI-1] == '.' {
+				if pI == n-1 {
+					return true
+				} else {
+					for lI < m && pattern[pI+1] != line[lI] {
+						lI++
+					}
+					lI--
+				}
+			} else {
+				for lI < m && pattern[pI-1] == line[lI] {
+					lI++
+				}
+				lI--
 			}
-			lI--
 		} else if pattern[pI] == '?' {
 			continue
-		} else if pattern[pI] != line[lI] {
+		} else if pattern[pI] != line[lI] && pattern[pI] != '.' {
 			if pI+1 < n && pattern[pI+1] == '?' {
 				lI--
 			} else {
