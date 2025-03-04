@@ -61,8 +61,12 @@ func matchPattern(line string, pattern string, pos int) bool {
 	n, m := len(pattern), len(line)
 	lI := pos
 	for pI := 0; pI < n; pI++ {
-		if lI >= len(line) {
-			return false
+		if lI >= m {
+			if pI+1 < n && pattern[pI+1] == '?' {
+				continue
+			} else {
+				return false
+			}
 		}
 		if pattern[pI] == '\\' && pI+1 < n {
 			if pattern[pI+1] == 'd' && !isDigit(rune(line[lI])) {
@@ -95,8 +99,14 @@ func matchPattern(line string, pattern string, pos int) bool {
 				lI++
 			}
 			lI--
+		} else if pattern[pI] == '?' {
+			continue
 		} else if pattern[pI] != line[lI] {
-			return false
+			if pI+1 < n && pattern[pI+1] == '?' {
+				lI--
+			} else {
+				return false
+			}
 		}
 		lI++
 	}
